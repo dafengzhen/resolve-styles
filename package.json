@@ -1,6 +1,6 @@
 {
   "name": "@dafengzhen/resolve-styles",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Parse mixed styles into a flat camelCased object — strings, objects, arrays, with override.",
   "keywords": [
     "camelcase",
