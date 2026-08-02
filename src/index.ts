@@ -1,7 +1,8 @@
+import type { StyleInput, StyleObject } from './types.js';
+
 import { toCamelCase } from './internal/camel-case.js';
 import { warn } from './internal/warn.js';
 import { addUnit } from './unit-map.js';
-import type { StyleInput, StyleObject } from './types.js';
 
 export type { StyleInput, StyleObject, StylePrimitive } from './types.js';
 export { configureUnitMap, DEFAULT_UNIT_MAP, getUnitMap } from './unit-map.js';

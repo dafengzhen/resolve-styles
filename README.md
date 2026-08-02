@@ -1,8 +1,12 @@
 # resolve-styles
 
-[中文文档](./README.zh.md)
+[![GitHub License](https://img.shields.io/github/license/dafengzhen/resolve-styles?color=blue)](https://github.com/dafengzhen/resolve-styles)
+[![npm version](https://img.shields.io/npm/v/@dafengzhen/resolve-styles)](https://www.npmjs.com/package/@dafengzhen/resolve-styles)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/dafengzhen/resolve-styles/pulls)
 
-`@dafengzhen/resolve-styles` resolves composable JavaScript style objects into one flat, camel-cased object. It is useful when styles are assembled from base, conditional, and overriding values.
+[简体中文](./README.zh.md)
+
+Parse mixed styles into a flat camelCased object — strings, objects, arrays, with override. Zero dependencies.
 
 ## Installation
 
@@ -10,93 +14,136 @@
 npm install @dafengzhen/resolve-styles
 ```
 
-## Usage
+## Quick Start
 
 ```ts
 import resolveStyles from '@dafengzhen/resolve-styles';
 
-const isActive = true;
+const styles = resolveStyles({
+  color: 'red',
+  fontSize: 16,
+  height: 50,
+  margin: 0,
+  padding: 10,
+  width: 100,
+});
 
-const styles = resolveStyles(
-  { color: 'slategray', 'font-size': 14, padding: 8 },
-  isActive && { color: 'royalblue' },
-  { padding: 12 },
-);
-
+console.log(styles);
 // {
-//   color: 'royalblue',
-//   fontSize: '14px',
-//   padding: '12px',
+//   color: 'red',
+//   fontSize: '16px',
+//   height: '50px',
+//   margin: '0',
+//   padding: '10px',
+//   width: '100px'
 // }
 ```
 
-Later inputs take precedence. Inputs may also be grouped in arrays:
+## Features
 
-```ts
-resolveStyles([{ color: 'tomato' }, { color: 'seagreen', marginTop: 10 }]);
-// { color: 'seagreen', marginTop: '10px' }
-```
-
-## Behavior
-
-- Accepts style objects and arrays of inputs. At runtime, `false`, `null`, and `undefined` inputs are skipped, which is useful when composing conditional styles in JavaScript.
-- Converts kebab-case property names to camelCase. CSS custom properties such as `--brand-color` are preserved.
-- Converts finite numeric values using the configured unit map. A value of `0` always remains `'0'`; properties without a configured unit become strings without a suffix.
-- A `null` or `undefined` property value removes that property from the resolved result.
-- Flattens nested objects by joining their keys with `-` before camel-casing. For example, `{ '&:hover': { color: 'red' } }` becomes `{ '&:hoverColor': 'red' }`.
-- Rejects circular style-object references to prevent an infinite loop.
-
-Top-level string and number inputs are deprecated and ignored. Boolean property values are ignored. In development, unsupported inputs emit a console warning.
-
-## Units
-
-By default, common layout and typography properties receive `px`, including `width`, `margin`, `padding`, `fontSize`, `lineHeight`, and `borderRadius`.
-
-Customize or extend this map when your project uses other units:
-
-```ts
-import { configureUnitMap, getUnitMap, resolveStyles } from '@dafengzhen/resolve-styles';
-
-configureUnitMap({
-  animationDuration: 'ms',
-  rotate: 'deg',
-});
-
-resolveStyles({ animationDuration: 200, rotate: 45 });
-// { animationDuration: '200ms', rotate: '45deg' }
-
-console.log(getUnitMap());
-```
-
-`configureUnitMap` extends the current map for the running process. Call it during application setup before resolving styles.
-
-## TypeScript
-
-The package exports `StyleInput`, `StyleObject`, and `StylePrimitive` types:
-
-```ts
-import type { StyleInput } from '@dafengzhen/resolve-styles';
-
-const buttonStyles: StyleInput = [{ borderRadius: 6, padding: 8 }, { '&:hover': { opacity: 0.9 } }];
-```
+- **Multiple input types** — accept objects, arrays, and primitives as style inputs
+- **Flat camelCased output** — all property names are converted to camelCase
+- **Automatic unit conversion** — numeric values get appropriate units (e.g., `16` → `'16px'`)
+- **Array composition** — merge arrays with last-element-wins precedence
+- **Nested object flattening** — nested selectors are flattened with hyphen-separated prefixes
+- **Conditional styles** — `null` / `undefined` values are silently skipped
+- **Property removal** — set a property to `null` to remove it from the result
+- **Circular reference detection** — throws on circular structures
+- **Zero dependencies** — no runtime dependencies
 
 ## API
 
-### `resolveStyles(...inputs)`
+### `resolveStyles(...inputs: StyleInput[]): Record<string, string>`
 
-Resolves one or more `StyleInput` values to `Record<string, string>`.
+Takes any number of style inputs and returns a flat `Record<string, string>` with camelCased keys and string CSS values.
 
-### `configureUnitMap(custom)`
+#### Merge Precedence
 
-Merges custom property-to-unit entries into the current unit map.
+Inputs are processed in **reverse order** — the last input has the highest precedence. Arrays are flattened with their last element having the highest precedence.
 
-### `getUnitMap()`
+```ts
+resolveStyles({ color: 'red', fontSize: 14 }, { color: 'blue' }, { fontSize: 18 });
+// → { color: 'blue', fontSize: '18px' }
+```
 
-Returns a copy of the current unit map.
+#### Array Composition
+
+Arrays are flattened and merged. Later elements override earlier ones:
+
+```ts
+resolveStyles([{ color: 'red' }, { color: 'blue', fontSize: 14 }]);
+// → { color: 'blue', fontSize: '14px' }
+```
+
+#### Nested Objects
+
+Nested objects are flattened with hyphen-separated keys, useful for pseudo-classes, media queries, or nested selectors:
+
+```ts
+resolveStyles({
+  '&:hover': {
+    color: 'red',
+    backgroundColor: 'blue',
+  },
+});
+// → { '&:hover-color': 'red', '&:hover-backgroundColor': 'blue' }
+```
+
+#### Conditional Styles
+
+Falsy values (`null`, `undefined`, `false`) are skipped, enabling conditional style inclusion:
+
+```ts
+const isActive = false;
+
+resolveStyles({ color: 'red' }, isActive && { color: 'blue' }, { fontSize: 16 });
+// → { color: 'red', fontSize: '16px' }
+```
+
+#### Property Removal
+
+Set a property to `null` to remove it from the final result:
+
+```ts
+resolveStyles({ color: 'red', fontSize: '16px' }, { fontSize: null });
+// → { color: 'red' }
+```
+
+### `configureUnitMap(custom: Record<string, string>): void`
+
+Customize which CSS properties receive automatic units and which unit to use.
+
+```ts
+import { configureUnitMap } from '@dafengzhen/resolve-styles';
+
+configureUnitMap({
+  myCustomProp: 'rem',
+  opacity: '', // empty string means no unit
+});
+
+resolveStyles({ myCustomProp: 2, opacity: 0.5 });
+// → { myCustomProp: '2rem', opacity: '0.5' }
+```
+
+### `getUnitMap(): Readonly<Record<string, string>>`
+
+Returns a copy of the current unit map (including any customizations).
 
 ### `DEFAULT_UNIT_MAP`
 
-The built-in property-to-unit map.
+The default unit map used by the library. Contains common CSS properties like `width`, `height`, `margin`, `padding`, `fontSize`, `borderRadius`, etc., all mapped to `'px'`.
+
+## Types
+
+```ts
+export type StyleInput = StyleInput[] | StyleObject | StylePrimitive;
+
+export interface StyleObject {
+  [key: string]: StyleInput;
+}
+
+export type StylePrimitive = null | number | string | undefined;
+```
 
 ## License
 
