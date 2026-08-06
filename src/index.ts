@@ -2,10 +2,8 @@ import type { StyleInput, StyleObject } from './types.js';
 
 import { toCamelCase } from './internal/camel-case.js';
 import { warn } from './internal/warn.js';
-import { addUnit } from './unit-map.js';
 
 export type { StyleInput, StyleObject, StylePrimitive } from './types.js';
-export { configureUnitMap, DEFAULT_UNIT_MAP, getUnitMap } from './unit-map.js';
 
 /**
  * Maximum number of iterations allowed to prevent infinite loops
@@ -31,8 +29,8 @@ const MAX_ITERATIONS = 10000;
  * - Nested objects are flattened with hyphen-separated keys (e.g., `{ "&:hover": { color: "red" } }` → `{ "&:hover-color": "red" }`)
  *
  * ### Value Handling
- * - **Strings**: Used directly as CSS values (deprecated, will show warning)
- * - **Numbers**: Automatically converted to strings with appropriate units via `addUnit()`
+ * - **Strings**: Used directly as CSS values
+ * - **Numbers**: Converted to strings (e.g., `16` → `"16"`)
  * - **Objects**: Recursively processed and flattened
  * - **Arrays**: Flattened and merged
  * - **`null` / `undefined`**: Removes the property from the final result
@@ -55,14 +53,14 @@ const MAX_ITERATIONS = 10000;
  *   { color: "red", fontSize: 16 },
  *   { backgroundColor: "blue" }
  * )
- * // Returns: { color: "red", fontSize: "16px", backgroundColor: "blue" }
+ * // Returns: { color: "red", fontSize: "16", backgroundColor: "blue" }
  *
  * // Array composition (last element wins)
  * resolveStyles([
  *   { color: "red" },
  *   { color: "blue", fontSize: 14 }
  * ])
- * // Returns: { color: "blue", fontSize: "14px" }
+ * // Returns: { color: "blue", fontSize: "14" }
  *
  * // Nested objects with prefixes
  * resolveStyles({
@@ -79,7 +77,7 @@ const MAX_ITERATIONS = 10000;
  *   isActive && { color: "blue" },  // false will be skipped
  *   { fontSize: 16 }
  * )
- * // Returns: { color: "red", fontSize: "16px" } if isActive is false
+ * // Returns: { color: "red", fontSize: "16" } if isActive is false
  *
  * // Null removes properties
  * resolveStyles(
@@ -87,11 +85,17 @@ const MAX_ITERATIONS = 10000;
  *   { fontSize: null }  // Removes fontSize from result
  * )
  * // Returns: { color: "red" }
+ *
+ * // Numeric values are converted to strings without automatic units
+ * resolveStyles(
+ *   { width: 100, height: 200, opacity: 0.5 }
+ * )
+ * // Returns: { width: "100", height: "200", opacity: "0.5" }
+ * // Note: Use explicit strings for units: { width: "100px", height: "200px" }
  * ```
  *
  * @see {@link StyleInput} - Input types accepted by this function
  * @see {@link toCamelCase} - How property names are converted
- * @see {@link addUnit} - How numeric values are unitized
  */
 export function resolveStyles(...inputs: StyleInput[]): Record<string, string> {
   const result: Record<string, string> = {};
@@ -203,13 +207,13 @@ export function resolveStyles(...inputs: StyleInput[]): Record<string, string> {
         continue;
       }
 
-      // Number values - add appropriate unit
+      // Number values - convert to string without automatic units
       if (typeof value === 'number') {
         if (!Number.isFinite(value)) {
           warn(`Invalid number value for "${fullKey}": ${value}. Skipped.`);
           continue;
         }
-        result[camelKey] = addUnit(camelKey, value);
+        result[camelKey] = String(value);
         continue;
       }
 

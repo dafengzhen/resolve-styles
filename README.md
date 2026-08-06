@@ -21,11 +21,11 @@ import resolveStyles from '@dafengzhen/resolve-styles';
 
 const styles = resolveStyles({
   color: 'red',
-  fontSize: 16,
-  height: 50,
-  margin: 0,
-  padding: 10,
-  width: 100,
+  fontSize: '16px',
+  height: '50px',
+  margin: '0px',
+  padding: '10px',
+  width: '100px',
 });
 
 console.log(styles);
@@ -33,22 +33,25 @@ console.log(styles);
 //   color: 'red',
 //   fontSize: '16px',
 //   height: '50px',
-//   margin: '0',
+//   margin: '0px',
 //   padding: '10px',
 //   width: '100px'
 // }
 ```
 
+> **Note:** Numeric values are converted to plain strings without automatic unit suffixes. Use explicit string values for CSS units (e.g., `'16px'` instead of `16`).
+
 ## Features
 
 - **Multiple input types** — accept objects, arrays, and primitives as style inputs
 - **Flat camelCased output** — all property names are converted to camelCase
-- **Automatic unit conversion** — numeric values get appropriate units (e.g., `16` → `'16px'`)
 - **Array composition** — merge arrays with last-element-wins precedence
 - **Nested object flattening** — nested selectors are flattened with hyphen-separated prefixes
-- **Conditional styles** — `null` / `undefined` values are silently skipped
+- **Conditional styles** — `null` / `undefined` / `false` values are silently skipped
 - **Property removal** — set a property to `null` to remove it from the result
 - **Circular reference detection** — throws on circular structures
+- **Boolean values** — warned and ignored
+- **Iteration guard** — enforces a maximum iteration limit to prevent infinite loops
 - **Zero dependencies** — no runtime dependencies
 
 ## API
@@ -62,7 +65,7 @@ Takes any number of style inputs and returns a flat `Record<string, string>` wit
 Inputs are processed in **reverse order** — the last input has the highest precedence. Arrays are flattened with their last element having the highest precedence.
 
 ```ts
-resolveStyles({ color: 'red', fontSize: 14 }, { color: 'blue' }, { fontSize: 18 });
+resolveStyles({ color: 'red', fontSize: '14px' }, { color: 'blue' }, { fontSize: '18px' });
 // → { color: 'blue', fontSize: '18px' }
 ```
 
@@ -71,7 +74,7 @@ resolveStyles({ color: 'red', fontSize: 14 }, { color: 'blue' }, { fontSize: 18 
 Arrays are flattened and merged. Later elements override earlier ones:
 
 ```ts
-resolveStyles([{ color: 'red' }, { color: 'blue', fontSize: 14 }]);
+resolveStyles([{ color: 'red' }, { color: 'blue', fontSize: '14px' }]);
 // → { color: 'blue', fontSize: '14px' }
 ```
 
@@ -96,7 +99,7 @@ Falsy values (`null`, `undefined`, `false`) are skipped, enabling conditional st
 ```ts
 const isActive = false;
 
-resolveStyles({ color: 'red' }, isActive && { color: 'blue' }, { fontSize: 16 });
+resolveStyles({ color: 'red' }, isActive && { color: 'blue' }, { fontSize: '16px' });
 // → { color: 'red', fontSize: '16px' }
 ```
 
@@ -109,29 +112,9 @@ resolveStyles({ color: 'red', fontSize: '16px' }, { fontSize: null });
 // → { color: 'red' }
 ```
 
-### `configureUnitMap(custom: Record<string, string>): void`
+#### Deprecated Inputs
 
-Customize which CSS properties receive automatic units and which unit to use.
-
-```ts
-import { configureUnitMap } from '@dafengzhen/resolve-styles';
-
-configureUnitMap({
-  myCustomProp: 'rem',
-  opacity: '', // empty string means no unit
-});
-
-resolveStyles({ myCustomProp: 2, opacity: 0.5 });
-// → { myCustomProp: '2rem', opacity: '0.5' }
-```
-
-### `getUnitMap(): Readonly<Record<string, string>>`
-
-Returns a copy of the current unit map (including any customizations).
-
-### `DEFAULT_UNIT_MAP`
-
-The default unit map used by the library. Contains common CSS properties like `width`, `height`, `margin`, `padding`, `fontSize`, `borderRadius`, etc., all mapped to `'px'`.
+Passing a raw `string` or `number` as a top-level input is deprecated and will emit a warning. Use object syntax instead.
 
 ## Types
 

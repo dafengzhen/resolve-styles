@@ -21,11 +21,11 @@ import resolveStyles from '@dafengzhen/resolve-styles';
 
 const styles = resolveStyles({
   color: 'red',
-  fontSize: 16,
-  height: 50,
-  margin: 0,
-  padding: 10,
-  width: 100,
+  fontSize: '16px',
+  height: '50px',
+  margin: '0px',
+  padding: '10px',
+  width: '100px',
 });
 
 console.log(styles);
@@ -33,22 +33,25 @@ console.log(styles);
 //   color: 'red',
 //   fontSize: '16px',
 //   height: '50px',
-//   margin: '0',
+//   margin: '0px',
 //   padding: '10px',
 //   width: '100px'
 // }
 ```
 
+> **注意：** 数值会被转换为纯字符串，不会自动添加单位后缀。请使用显式字符串值来指定 CSS 单位（例如，使用 `'16px'` 而不是 `16`）。
+
 ## 特性
 
 - **多种输入类型** — 支持对象、数组和原始值作为样式输入
 - **扁平驼峰输出** — 所有属性名自动转换为驼峰命名
-- **自动单位转换** — 数值自动添加合适的单位（如 `16` → `'16px'`）
 - **数组合并** — 合并数组，最后的元素优先级最高
 - **嵌套对象扁平化** — 嵌套选择器以连字符分隔的前缀展平
-- **条件样式** — `null` / `undefined` 值会被静默跳过
+- **条件样式** — `null` / `undefined` / `false` 值会被静默跳过
 - **属性移除** — 将属性设为 `null` 可从结果中移除
 - **循环引用检测** — 检测到循环引用时抛出错误
+- **布尔值处理** — 发出警告并忽略
+- **迭代保护** — 强制最大迭代次数以防止无限循环
 - **零依赖** — 无运行时依赖
 
 ## API
@@ -62,7 +65,7 @@ console.log(styles);
 输入按**逆序**处理 — 最后一个输入具有最高优先级。数组中的元素也是最后的元素优先级最高。
 
 ```ts
-resolveStyles({ color: 'red', fontSize: 14 }, { color: 'blue' }, { fontSize: 18 });
+resolveStyles({ color: 'red', fontSize: '14px' }, { color: 'blue' }, { fontSize: '18px' });
 // → { color: 'blue', fontSize: '18px' }
 ```
 
@@ -71,7 +74,7 @@ resolveStyles({ color: 'red', fontSize: 14 }, { color: 'blue' }, { fontSize: 18 
 数组会被展平并合并，后面的元素会覆盖前面的：
 
 ```ts
-resolveStyles([{ color: 'red' }, { color: 'blue', fontSize: 14 }]);
+resolveStyles([{ color: 'red' }, { color: 'blue', fontSize: '14px' }]);
 // → { color: 'blue', fontSize: '14px' }
 ```
 
@@ -96,7 +99,7 @@ resolveStyles({
 ```ts
 const isActive = false;
 
-resolveStyles({ color: 'red' }, isActive && { color: 'blue' }, { fontSize: 16 });
+resolveStyles({ color: 'red' }, isActive && { color: 'blue' }, { fontSize: '16px' });
 // → { color: 'red', fontSize: '16px' }
 ```
 
@@ -109,29 +112,9 @@ resolveStyles({ color: 'red', fontSize: '16px' }, { fontSize: null });
 // → { color: 'red' }
 ```
 
-### `configureUnitMap(custom: Record<string, string>): void`
+#### 已废弃的输入
 
-自定义哪些 CSS 属性会自动添加单位以及使用哪个单位。
-
-```ts
-import { configureUnitMap } from '@dafengzhen/resolve-styles';
-
-configureUnitMap({
-  myCustomProp: 'rem',
-  opacity: '', // 空字符串表示不添加单位
-});
-
-resolveStyles({ myCustomProp: 2, opacity: 0.5 });
-// → { myCustomProp: '2rem', opacity: '0.5' }
-```
-
-### `getUnitMap(): Readonly<Record<string, string>>`
-
-返回当前单位映射表的副本（包括自定义配置）。
-
-### `DEFAULT_UNIT_MAP`
-
-库使用的默认单位映射表。包含常见的 CSS 属性，如 `width`、`height`、`margin`、`padding`、`fontSize`、`borderRadius` 等，均映射为 `'px'`。
+将原始 `string` 或 `number` 作为顶层输入已被废弃，会产生警告。请改用对象语法。
 
 ## 类型
 
