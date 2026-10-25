@@ -2,11 +2,13 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import type { ResolvedStyles, StyleInput, StyleObject, StyleValue } from './index.js';
 
-import resolveStyles, { resolveStyles as namedResolveStyles } from './index.js';
+import * as publicApi from './index.js';
+import { resolveStyles } from './index.js';
 
 describe('resolveStyles', () => {
-  it('exports the same function as default and named exports', () => {
-    expect(resolveStyles).toBe(namedResolveStyles);
+  it('exposes only the named runtime export', () => {
+    expect(Object.keys(publicApi)).toEqual(['resolveStyles']);
+    expect(publicApi.resolveStyles).toBe(resolveStyles);
   });
 
   it('returns a fresh ordinary object for empty inputs', () => {

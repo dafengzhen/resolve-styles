@@ -27,7 +27,7 @@ const styles = resolveStyles(
 // { backgroundColor: 'white', color: 'blue', opacity: 1, fontSize: '16px' }
 ```
 
-同时提供默认导出。支持只读对象和数组，可以直接传入 `as const` 定义。
+仅提供 `resolveStyles` 命名导出。支持只读对象和数组，可以直接传入 `as const` 定义。
 
 ## API
 

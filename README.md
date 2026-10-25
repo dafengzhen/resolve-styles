@@ -27,7 +27,7 @@ const styles = resolveStyles(
 // { backgroundColor: 'white', color: 'blue', opacity: 1, fontSize: '16px' }
 ```
 
-A default export is also available. Inputs can be readonly objects and arrays, including `as const` definitions.
+Only the named `resolveStyles` export is available. Inputs can be readonly objects and arrays, including `as const` definitions.
 
 ## API
 

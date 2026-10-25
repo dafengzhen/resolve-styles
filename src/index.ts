@@ -84,5 +84,3 @@ export function resolveStyles(...inputs: readonly StyleInput[]): ResolvedStyles 
 
   return result;
 }
-
-export default resolveStyles;
