@@ -2,11 +2,10 @@
 
 [![GitHub License](https://img.shields.io/github/license/dafengzhen/resolve-styles?color=blue)](https://github.com/dafengzhen/resolve-styles)
 [![npm version](https://img.shields.io/npm/v/@dafengzhen/resolve-styles)](https://www.npmjs.com/package/@dafengzhen/resolve-styles)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/dafengzhen/resolve-styles/pulls)
 
 [简体中文](./README.zh.md)
 
-Parse mixed styles into a flat camelCased object — strings, objects, arrays, with override. Zero dependencies.
+Compose inline style objects with predictable overrides. Zero runtime dependencies.
 
 ## Installation
 
@@ -14,118 +13,104 @@ Parse mixed styles into a flat camelCased object — strings, objects, arrays, w
 npm install @dafengzhen/resolve-styles
 ```
 
-## Quick Start
+## Quick start
 
 ```ts
-import resolveStyles from '@dafengzhen/resolve-styles';
+import { resolveStyles } from '@dafengzhen/resolve-styles';
 
-const styles = resolveStyles({
-  color: 'red',
-  fontSize: '16px',
-  height: '50px',
-  margin: '0px',
-  padding: '10px',
-  width: '100px',
-});
-
-console.log(styles);
-// {
-//   color: 'red',
-//   fontSize: '16px',
-//   height: '50px',
-//   margin: '0px',
-//   padding: '10px',
-//   width: '100px'
-// }
+const active = true;
+const styles = resolveStyles(
+  { 'background-color': 'white', color: 'black', opacity: 0.5 },
+  active && { color: 'blue' },
+  [{ 'font-size': '16px' }, null, { opacity: 1 }],
+);
+// { backgroundColor: 'white', color: 'blue', opacity: 1, fontSize: '16px' }
 ```
 
-> **Note:** Numeric values are converted to plain strings without automatic unit suffixes. Use explicit string values for CSS units (e.g., `'16px'` instead of `16`).
-
-## Features
-
-- **Multiple input types** — accept objects, arrays, and primitives as style inputs
-- **Flat camelCased output** — all property names are converted to camelCase
-- **Array composition** — merge arrays with last-element-wins precedence
-- **Nested object flattening** — nested selectors are flattened with hyphen-separated prefixes
-- **Conditional styles** — `null` / `undefined` / `false` values are silently skipped
-- **Property removal** — set a property to `null` to remove it from the result
-- **Circular reference detection** — throws on circular structures
-- **Boolean values** — warned and ignored
-- **Iteration guard** — enforces a maximum iteration limit to prevent infinite loops
-- **Zero dependencies** — no runtime dependencies
+A default export is also available. Inputs can be readonly objects and arrays, including `as const` definitions.
 
 ## API
 
-### `resolveStyles(...inputs: StyleInput[]): Record<string, string>`
+### `resolveStyles(...inputs: readonly StyleInput[]): ResolvedStyles`
 
-Takes any number of style inputs and returns a flat `Record<string, string>` with camelCased keys and string CSS values.
+Returns a fresh, mutable, ordinary object. Inputs are never modified. Arguments, nested arrays and own enumerable string properties are processed from left to right; the last declaration for a normalized property wins. Shared objects and arrays can be reused.
 
-#### Merge Precedence
+| Input                                                                    | Behavior           |
+| ------------------------------------------------------------------------ | ------------------ |
+| Plain style object, including a null-prototype object                    | Merge declarations |
+| Nested array of style inputs                                             | Compose in order   |
+| `false`, `null`, `undefined` as an input                                 | Skip               |
+| Other inputs, including CSS strings, numbers, `true` and class instances | Throw `TypeError`  |
 
-Inputs are processed in **reverse order** — the last input has the highest precedence. Arrays are flattened with their last element having the highest precedence.
+| Property value                                           | Behavior                        |
+| -------------------------------------------------------- | ------------------------------- |
+| String or finite number                                  | Preserve the value and its type |
+| `null`                                                   | Delete the normalized property  |
+| `undefined`                                              | Keep the previous value         |
+| Boolean, object, array, non-finite number or other value | Throw `TypeError`               |
 
 ```ts
-resolveStyles({ color: 'red', fontSize: '14px' }, { color: 'blue' }, { fontSize: '18px' });
-// → { color: 'blue', fontSize: '18px' }
+resolveStyles(
+  { color: 'red', 'font-size': '14px', opacity: 0.5 },
+  { color: undefined, fontSize: null, opacity: 0 },
+);
+// { color: 'red', opacity: 0 }
 ```
 
-#### Array Composition
+Numbers stay numbers. This library neither appends units nor applies the result to an element. Use explicit strings such as `'16px'` when the consumer needs units. For React's `style` prop, numeric values follow React's own unit rules; when assigning to `element.style`, supply unit-bearing strings yourself.
 
-Arrays are flattened and merged. Later elements override earlier ones:
+### Property names
 
-```ts
-resolveStyles([{ color: 'red' }, { color: 'blue', fontSize: '14px' }]);
-// → { color: 'blue', fontSize: '14px' }
-```
-
-#### Nested Objects
-
-Nested objects are flattened with hyphen-separated keys, useful for pseudo-classes, media queries, or nested selectors:
+Property names are trimmed and converted from kebab-case to JavaScript style names. CSS custom properties retain their spelling and case. Blank names throw `TypeError`.
 
 ```ts
 resolveStyles({
-  '&:hover': {
-    color: 'red',
-    backgroundColor: 'blue',
-  },
+  '--Brand-color': 'blue',
+  '-ms-transform': 'none',
+  '-webkit-appearance': 'none',
+  'background-color': 'white',
 });
-// → { '&:hover-color': 'red', '&:hover-backgroundColor': 'blue' }
+// {
+//   '--Brand-color': 'blue',
+//   msTransform: 'none',
+//   WebkitAppearance: 'none',
+//   backgroundColor: 'white',
+// }
 ```
 
-#### Conditional Styles
+This is a flat inline-style composer. Nested selectors, media queries, declaration arrays and raw CSS text are unsupported. It does not validate CSS property names, parse CSS syntax or expand shorthand properties; for example, `margin` and `marginLeft` remain separate entries.
 
-Falsy values (`null`, `undefined`, `false`) are skipped, enabling conditional style inclusion:
-
-```ts
-const isActive = false;
-
-resolveStyles({ color: 'red' }, isActive && { color: 'blue' }, { fontSize: '16px' });
-// → { color: 'red', fontSize: '16px' }
-```
-
-#### Property Removal
-
-Set a property to `null` to remove it from the final result:
-
-```ts
-resolveStyles({ color: 'red', fontSize: '16px' }, { fontSize: null });
-// → { color: 'red' }
-```
-
-#### Deprecated Inputs
-
-Passing a raw `string` or `number` as a top-level input is deprecated and will emit a warning. Use object syntax instead.
+Circular arrays throw `TypeError`. Traversal is iterative with no fixed depth or input-count limit. Invalid values throw immediately, with the property name included for invalid declarations. The library never logs warnings.
 
 ## Types
 
 ```ts
-export type StyleInput = StyleInput[] | StyleObject | StylePrimitive;
+export type StyleValue = number | string;
 
 export interface StyleObject {
-  [key: string]: StyleInput;
+  readonly [property: string]: null | StyleValue | undefined;
 }
 
-export type StylePrimitive = null | number | string | undefined;
+export type StyleInput = false | null | readonly StyleInput[] | StyleObject | undefined;
+export type ResolvedStyles = Record<string, StyleValue>;
+```
+
+## Breaking changes
+
+This API replaces the previous behavior without a compatibility layer:
+
+- Numeric values are preserved instead of converted to strings.
+- `undefined` declarations are skipped; use `null` to delete a property.
+- Nested property objects are rejected instead of flattened into prefixed keys.
+- Unsupported inputs and invalid declarations throw instead of being ignored or warned about.
+- `StylePrimitive` is replaced by the separate `StyleValue` and `StyleInput` types.
+
+## Development
+
+```bash
+npm run check         # types, lint, formatting, tests, builds and package validation
+npm run coverage      # coverage report
+npm run dev           # example playground
 ```
 
 ## License

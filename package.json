@@ -1,7 +1,7 @@
 {
   "name": "@dafengzhen/resolve-styles",
   "version": "0.1.4",
-  "description": "Parse mixed styles into a flat camelCased object — strings, objects, arrays, with override.",
+  "description": "Compose inline style objects and conditional arrays with camelCase keys and predictable overrides.",
   "keywords": [
     "camelcase",
     "css-in-js",

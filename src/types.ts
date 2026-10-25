@@ -1,57 +1,13 @@
-/**
- * Represents any valid style input, which can be:
- * - A primitive value (`StylePrimitive`)
- * - A nested style object (`StyleObject`)
- * - An array of style inputs (flattened and merged at runtime)
- *
- * This recursive union type allows for flexible and composable style definitions,
- * commonly used in CSS-in-JS libraries or runtime style processors.
- *
- * @example
- * ```ts
- * // Primitive
- * const primitive: StyleInput = "12px";
- *
- * // Nested object
- * const object: StyleInput = { fontSize: "16px", color: "green" };
- *
- * // Array of mixed inputs
- * const array: StyleInput = [
- *   { color: "red" },
- *   "bold",
- *   { fontSize: "14px" },
- *   null,
- *   undefined
- * ];
- * ```
- */
-export type StyleInput = StyleInput[] | StyleObject | StylePrimitive;
+/** A fresh, mutable object with normalized property names and preserved values. */
+export type ResolvedStyles = Record<string, StyleValue>;
 
-/**
- * Represents a style object where keys are CSS property names and values are nested style inputs.
- * Allows for recursive style definitions, enabling nested selectors or pseudo-classes.
- *
- * @example
- * ```ts
- * const styles: StyleObject = {
- *   color: "blue",
- *   "&:hover": {
- *     color: "red"
- *   },
- *   "@media (min-width: 768px)": {
- *     fontSize: "20px"
- *   }
- * };
- * ```
- */
+/** Composable styles, including readonly arrays and conditional expressions. */
+export type StyleInput = false | null | readonly StyleInput[] | StyleObject | undefined;
+
+/** Flat inline declarations. Null deletes a property; undefined skips it. */
 export interface StyleObject {
-  [key: string]: StyleInput;
+  readonly [property: string]: null | StyleValue | undefined;
 }
 
-/**
- * Represents a primitive value that can be used as a style value.
- * - `string`: CSS property value (e.g., "10px", "red", "block")
- * - `number`: Numeric value (typically converted to pixels in CSS)
- * - `null` | `undefined`: Falsy values that are typically ignored or treated as empty
- */
-export type StylePrimitive = null | number | string | undefined;
+/** A CSS value. Units must be supplied explicitly when needed by the consumer. */
+export type StyleValue = number | string;
