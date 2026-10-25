@@ -17,7 +17,6 @@ const camelCache = new Map<string, string>();
  *          - It starts with `--` (CSS custom property/variable)
  *          - It doesn't contain any hyphens (`-`)
  *
- * @remarks
  * - CSS custom properties (e.g., `--my-variable`) are returned unchanged
  *   because they are case-sensitive and should not be transformed.
  * - Results are cached in `camelCache` for better performance on repeated calls.

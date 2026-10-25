@@ -13,7 +13,6 @@
     "jsx-a11y",
     "node",
     "promise",
-    "jest",
     "vitest",
     "vue"
   ],
@@ -59,8 +58,7 @@
   "settings": {
     "jsdoc": {
       "tagNamePreference": {
-        "typeParam": "typeParam",
-        "remarks": "remarks"
+        "typeParam": "typeParam"
       }
     }
   }

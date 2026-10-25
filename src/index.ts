@@ -22,7 +22,6 @@ const MAX_ITERATIONS = 10000;
  * @param inputs - A variadic list of style inputs to resolve and merge
  * @returns A flat record where keys are camelCase CSS property names and values are string CSS values
  *
- * @remarks
  * ### Processing Order
  * - Styles are processed in reverse order (last input has highest precedence)
  * - For arrays, elements are processed in reverse order (last element has highest precedence)

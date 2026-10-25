@@ -7,7 +7,6 @@
  * @param message - The warning message to display
  * @returns void
  *
- * @remarks
  * - Warnings are only logged when `NODE_ENV` is not set to `'production'`.
  * - The function checks for the existence of `process` and `process.env`
  *   to avoid errors in browser environments where `process` may be undefined.
